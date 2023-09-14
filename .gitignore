@@ -1,0 +1,6 @@
+/external_libraries/
+/.idea/
+/venv/
+/__pycache__/
+/scratches/
+/consoles/
