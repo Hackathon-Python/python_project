@@ -1,31 +1,37 @@
 import os
 from flask import Flask, render_template
-from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.urandom(32)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///movies_project.db'
-db = SQLAlchemy(app)
+from database import db
+
+from apis.users import users_router
 
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(16), unique=True, nullable=False)
+def create_app():
+    """
+    Initializes DB connection, creates an app instance, registers service routers, and returns app instance.
 
-class UserForm(FlaskForm):
-    username = StringField("username", validators=[DataRequired()])
-    password = StringField("password", validators=[DataRequired()])
-    submit = SubmitField("Submit")
+    :return: Flask
+    """
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY") or "mysecretkey"
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI") or "sqlite:///python_project.db"
+    app.config['DEBUG'] = os.environ.get("DEBUG")
+    app.app_context().push()
 
-@app.route('/', methods=['GET', 'POST'])
-def add_user():
-    form = UserForm()
-    return render_template("add_user.html", form=form)
+    # Init DB connection
+    db.init_app(app)
+    db.create_all()
+
+    # Register routes
+    app.register_blueprint(users_router, url_prefix='/users')
+
+    # TODO move me to my own router
+    @app.route('/', methods=['GET'])
+    def add_user():
+        # form = UserForm()  form=form
+        return render_template("add_user.html")
+
+    return app
 
 
-if __name__ == '__main__':
-    app.run()
+service = create_app()
