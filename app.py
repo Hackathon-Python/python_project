@@ -6,6 +6,7 @@ from database import db
 from models.user import User
 
 from apis.users import users_router
+from apis.movies import movies_router
 
 
 def create_app():
@@ -34,6 +35,7 @@ def create_app():
 
     # Register routes
     app.register_blueprint(users_router, url_prefix='/users')
+    app.register_blueprint(movies_router, url_prefix='/movies')
 
     # TODO move me to my own router
     @app.route('/', methods=['GET'])
