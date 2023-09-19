@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
+from database import db
 from models.movie import Movie
 
 movies_router = Blueprint("movies", __name__)
@@ -47,4 +48,19 @@ def get_single_movie(movie_id):
             return jsonify({"error": "Movie not found"}), 404
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@movies_router.route("/delete", methods=["DELETE"])
+def delete_movie():
+    try:
+        movie_id = request.args.get("id")
+        movie = db.get_or_404(Movie, movie_id)
+
+        db.session.delete(movie)
+        db.session.commit()
+        return jsonify({"Successfully deleted movie_id": movie.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
