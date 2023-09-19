@@ -51,7 +51,7 @@ def get_single_movie(movie_id):
         return jsonify({"error": str(e)}), 500
 
 
-@movies_router.route("/delete")
+@movies_router.route("/delete", methods=["DELETE"])
 def delete_movie():
     try:
         movie_id = request.args.get("id")
