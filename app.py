@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+
 from flask import Flask, render_template
 from flask_login import LoginManager
 
@@ -8,6 +10,9 @@ from models.user import User
 from apis.users import users_router
 from apis.movies import movies_router
 
+if os.environ.get("FLASK_ENV") == "development":
+    load_dotenv()
+
 
 def create_app():
     """
@@ -16,8 +21,8 @@ def create_app():
     :return: Flask
     """
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY") or "mysecretkey"
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI") or "sqlite:///python_project.db"
+    app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
     app.config['DEBUG'] = os.environ.get("DEBUG")
     app.app_context().push()
 

@@ -4,8 +4,8 @@ import requests
 from database import db
 from models.movie import Movie
 
-MOVIE_DB_API_KEY = os.environ.get("MOVIE_DB_API_KEY")
-API_URL = os.environ.get("API_URL")
+MOVIE_DB_API_KEY = "b96158f5d67900bd09aee33cc2703106"
+API_URL = f"https://api.themoviedb.org/3/tv/top_rated?api_key={MOVIE_DB_API_KEY}"
 
 
 def populate_movies_from_api():
@@ -16,10 +16,12 @@ def populate_movies_from_api():
         for movie_data in data.get("results", []):
             title = movie_data.get("name", "")
             description = movie_data.get("overview", "")
+            rating = movie_data.get("vote_average", "")
 
             new_movie = Movie(
                 title=title,
                 description=description,
+                rating=rating
             )
 
             try:
