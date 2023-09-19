@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, flash, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user, current_user
 
 from database import db
 from models.user import User
@@ -8,6 +8,18 @@ from models.user import User
 users_router = Blueprint("users", __name__)
 
 
+# convert InstrumentedList of SQLAlchemy objects into JSON
+def serialize_movie(movie):
+    return {
+        "id": movie.id,
+        "title": movie.title,
+        "description": movie.description,
+        "rating": movie.rating,
+        "img_url": movie.img_url
+    }
+
+
+# sign up
 @users_router.route("/signup", methods=['POST'])
 def create_user():
     data = request.get_json()
@@ -53,6 +65,7 @@ def create_user():
         return jsonify({"error": f"db error: '{err}'"}), 500
 
 
+# login
 @users_router.route("/login", methods=['POST'])
 def login():
     data = request.get_json()
@@ -78,8 +91,26 @@ def login():
         return jsonify({"error": f"db error: '{err}'"}), 500
 
 
+# logout
 @users_router.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
     return jsonify({"message": "Logged out successfully"}), 201
+
+
+# get the user's watchlist
+@users_router.route("/watchlist", methods=['GET'])
+@login_required
+def get_watchlist():
+    try:
+        user = current_user
+
+        if user:
+            watchlist = user.watch_later
+            serialized_watchlist = [serialize_movie(movie) for movie in watchlist]
+            return jsonify(serialized_watchlist), 200
+        else:
+            return jsonify({"error": "User is not found"}), 404
+    except Exception as err:
+        return jsonify({"error": f"db error: '{err}'"}), 500
