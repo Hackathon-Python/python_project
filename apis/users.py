@@ -73,8 +73,7 @@ def login():
             return response
         else:
             login_user(user)
-            print('User logged in')
-            return jsonify({"user_id": user.id}), 201
+            return jsonify({"User user_id is logged in": user.id}), 201
     except Exception as err:
         return jsonify({"error": f"db error: '{err}'"}), 500
 
