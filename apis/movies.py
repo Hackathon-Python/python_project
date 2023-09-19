@@ -8,6 +8,7 @@ from models.user import User
 movies_router = Blueprint("movies", __name__)
 
 
+# get all movies
 @movies_router.route("/", methods=['GET'])
 def get_all_movies():
     try:
@@ -31,6 +32,7 @@ def get_all_movies():
         return jsonify({"error": str(e)}), 500
 
 
+# get single movie
 @movies_router.route("/<int:movie_id>", methods=['GET'])
 def get_single_movie(movie_id):
     try:
@@ -53,6 +55,7 @@ def get_single_movie(movie_id):
         return jsonify({"error": str(e)}), 500
 
 
+# delete movie from db
 @movies_router.route("/delete", methods=["DELETE"])
 def delete_movie():
     try:
@@ -68,6 +71,7 @@ def delete_movie():
         return jsonify({"error": str(e)}), 500
 
 
+# add movie to watch later list
 @movies_router.route("/add_to_watch_later", methods=["POST"])
 @login_required
 def add_to_watch_later():
