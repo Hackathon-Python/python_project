@@ -1,7 +1,9 @@
 from flask import Blueprint, jsonify, request
+from flask_login import login_required, current_user
 
 from database import db
 from models.movie import Movie
+from models.user import User
 
 movies_router = Blueprint("movies", __name__)
 
@@ -60,6 +62,34 @@ def delete_movie():
         db.session.delete(movie)
         db.session.commit()
         return jsonify({"Successfully deleted movie_id": movie.id}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@movies_router.route("/add_to_watch_later", methods=["POST"])
+@login_required
+def add_to_watch_later():
+    try:
+        user_id = request.args.get("user_id")
+        movie_id = request.args.get("movie_id")
+
+        user = User.query.get(user_id)
+        movie = Movie.query.get(movie_id)
+
+        if user is None:
+            return jsonify({"error": "User is not found"}), 404
+        if movie is None:
+            return jsonify({"error": "Movie is not found"}), 404
+
+        if movie in current_user.watch_later:
+            return jsonify({"message": "Movie is already in watchlist"}), 200
+
+        user.watch_later.append(movie)
+        db.session.commit()
+
+        return jsonify({"message": "Movie added to watch later list"}), 201
 
     except Exception as e:
         db.session.rollback()
