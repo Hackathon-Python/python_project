@@ -55,8 +55,8 @@ def get_single_movie(movie_id):
         return jsonify({"error": str(e)}), 500
 
 
-# add movie to watch later list
-@movies_router.route("/add_to_watch_later", methods=["POST"])
+# add movie to watchlist
+@movies_router.route("/add_to_watchlist", methods=["POST"])
 @login_required
 def add_to_watch_later():
     try:
@@ -77,7 +77,7 @@ def add_to_watch_later():
         user.watch_later.append(movie)
         db.session.commit()
 
-        return jsonify({"message": "Movie added to watch later list"}), 201
+        return jsonify({"message": "Movie added to watchlist"}), 201
 
     except Exception as e:
         db.session.rollback()
