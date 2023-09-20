@@ -55,22 +55,6 @@ def get_single_movie(movie_id):
         return jsonify({"error": str(e)}), 500
 
 
-# delete movie from db
-@movies_router.route("/delete", methods=["DELETE"])
-def delete_movie():
-    try:
-        movie_id = request.args.get("id")
-        movie = db.get_or_404(Movie, movie_id)
-
-        db.session.delete(movie)
-        db.session.commit()
-        return jsonify({"Successfully deleted movie_id": movie.id}), 201
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-
 # add movie to watch later list
 @movies_router.route("/add_to_watch_later", methods=["POST"])
 @login_required
