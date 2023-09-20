@@ -3,7 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
 
 from database import db
-from models.user import User
+from models.user import User, user_movie
 
 users_router = Blueprint("users", __name__)
 
@@ -112,5 +112,27 @@ def get_watchlist():
             return jsonify(serialized_watchlist), 200
         else:
             return jsonify({"error": "User is not found"}), 404
+    except Exception as err:
+        return jsonify({"error": f"db error: '{err}'"}), 500
+
+
+# delete movie from watchlist
+@users_router.route("/watchlist/delete", methods=['DELETE'])
+@login_required
+def delete_from_watchlist():
+    try:
+        user = current_user
+        movie_id = request.args.get("movie_id")
+
+        if user:
+
+            relationship = db.session.query(user_movie).filter_by(user_id=user.id, movie_id=movie_id).first()
+
+            if relationship:
+                db.session.execute(db.delete(user_movie).filter_by(user_id=user.id, movie_id=movie_id))
+                db.session.commit()
+                return jsonify({"message": "Movie deleted from watchlist"}), 200
+            else:
+                return jsonify({"error": "Movie not found in watchlist"}), 404
     except Exception as err:
         return jsonify({"error": f"db error: '{err}'"}), 500
