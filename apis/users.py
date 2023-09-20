@@ -1,9 +1,12 @@
 from flask import Blueprint, request, jsonify, flash, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
+from utils.adapters import str_to_bool
 
 from database import db
+from models.movie import Movie
 from models.user import User, user_movie
+from sqlalchemy import and_
 
 users_router = Blueprint("users", __name__)
 
@@ -99,23 +102,6 @@ def logout():
     return jsonify({"message": "Logged out successfully"}), 201
 
 
-# get the user's watchlist
-@users_router.route("/watchlist", methods=['GET'])
-@login_required
-def get_watchlist():
-    try:
-        user = current_user
-
-        if user:
-            watchlist = user.watch_later
-            serialized_watchlist = [serialize_movie(movie) for movie in watchlist]
-            return jsonify(serialized_watchlist), 200
-        else:
-            return jsonify({"error": "User is not found"}), 404
-    except Exception as err:
-        return jsonify({"error": f"db error: '{err}'"}), 500
-
-
 # delete movie from watchlist
 @users_router.route("/watchlist/delete", methods=['DELETE'])
 @login_required
@@ -134,5 +120,29 @@ def delete_from_watchlist():
                 return jsonify({"message": "Movie deleted from watchlist"}), 200
             else:
                 return jsonify({"error": "Movie not found in watchlist"}), 404
+    except Exception as err:
+        return jsonify({"error": f"db error: '{err}'"}), 500
+
+
+# get the list of user's movies
+@users_router.route("/movies", methods=['GET'])
+@login_required
+def get_already_watched():
+    try:
+        # accept optional watched query param and parse it into bool
+        is_watched = str_to_bool(request.args.get("watched"))
+
+        user = current_user
+
+        query = db.session.query(Movie).join(user_movie).filter(
+            user_movie.c.user_id == user.id
+        )
+
+        if is_watched is not None:
+            query = query.filter(and_(user_movie.c.watched == is_watched))
+
+        user_watchlist = query.all()
+
+        return jsonify([serialize_movie(movie) for movie in user_watchlist]), 200
     except Exception as err:
         return jsonify({"error": f"db error: '{err}'"}), 500
