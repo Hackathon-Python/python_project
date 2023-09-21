@@ -56,12 +56,11 @@ def get_single_movie(movie_id):
 
 
 # add movie to watchlist
-@movies_router.route("/add_to_watchlist", methods=["POST"])
+@movies_router.route("/add_to_watchlist/<int:movie_id>", methods=["POST"])
 @login_required
-def add_to_watch_later():
+def add_to_watch_later(movie_id):
     try:
         user_id = request.args.get("user_id")
-        movie_id = request.args.get("movie_id")
 
         user = User.query.get(user_id)
         movie = Movie.query.get(movie_id)
@@ -72,7 +71,7 @@ def add_to_watch_later():
             return jsonify({"error": "Movie is not found"}), 404
 
         if movie in current_user.watch_later:
-            return jsonify({"message": "Movie is already in watchlist"}), 200
+            return jsonify({"message": "Movie is already in watchlist"}), 400
 
         user.watch_later.append(movie)
         db.session.commit()
@@ -85,12 +84,11 @@ def add_to_watch_later():
 
 
 # add movie to already watched
-@movies_router.route("/add_to_already_watched", methods=["POST"])
+@movies_router.route("/add_to_already_watched/<int:movie_id>", methods=["POST"])
 @login_required
-def add_to_already_watched():
+def add_to_already_watched(movie_id):
     try:
         user_id = request.args.get("user_id")
-        movie_id = request.args.get("movie_id")
 
         user = User.query.get(user_id)
         movie = Movie.query.get(movie_id)
@@ -104,7 +102,7 @@ def add_to_already_watched():
             watched_movie = db.session.query(user_movie).filter_by(user_id=current_user.id, movie_id=movie.id,
                                                                    watched=True).first()
             if watched_movie:
-                return jsonify({"message": "Movie is already watched."}), 200
+                return jsonify({"message": "Movie is already watched."}), 400
             else:
                 db.session.execute(
                     user_movie.update()
