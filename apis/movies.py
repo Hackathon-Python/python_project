@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
+from sqlalchemy import func
+from utils.adapters import remove_special_characters
 
 from database import db
 from models.movie import Movie
@@ -121,6 +123,30 @@ def add_to_already_watched(movie_id):
         db.session.commit()
 
         return jsonify({"message": "Movie added to already watched movies list."}), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# search for a movie
+@movies_router.route("/find", methods=['GET'])
+def find_movie():
+    movie_input = remove_special_characters(request.args.get("movie_input"))
+
+    try:
+        movies = Movie.query.filter(func.lower(Movie.title).like(f"%{movie_input.lower()}%")).all()
+
+        if movies:
+            movie_data = [{
+                "id": movie.id,
+                "title": movie.title,
+                "description": movie.description,
+                "rating": movie.rating,
+                "img_url": movie.img_url} for movie in movies]
+            return jsonify(movie_data), 200
+        else:
+            return jsonify({"error": "Movie is not found"}), 404
 
     except Exception as e:
         db.session.rollback()
