@@ -6,7 +6,7 @@ from utils.adapters import str_to_bool
 from database import db
 from models.movie import Movie
 from models.user import User, user_movie
-from sqlalchemy import and_, update
+from sqlalchemy import and_
 
 users_router = Blueprint("users", __name__)
 
