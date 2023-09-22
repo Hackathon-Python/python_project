@@ -24,7 +24,7 @@ def populate_movies_from_api():
                 title=title,
                 description=description,
                 rating=rating,
-                img_url=f"{MOVIE_DB_IMAGE_URL}/{img_url}"
+                img_url=f"{MOVIE_DB_IMAGE_URL}/{img_url}",
             )
 
             try:

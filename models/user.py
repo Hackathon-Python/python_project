@@ -15,3 +15,4 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(16), nullable=False)
     watch_later = db.relationship('Movie', secondary=user_movie, backref='watched_by_users')
+    comments = db.relationship("Comment", backref="comment_author")

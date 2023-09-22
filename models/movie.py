@@ -7,3 +7,4 @@ class Movie(db.Model):
     description = db.Column(db.String(500), nullable=False)
     rating = db.Column(db.Float, nullable=True)
     img_url = db.Column(db.String(250), nullable=False)
+    comments = db.relationship("Comment", backref="parent_movie")

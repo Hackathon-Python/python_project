@@ -6,6 +6,8 @@ from flask_login import LoginManager
 
 from database import db
 from models.user import User
+from models.comment import Comment
+from models.movie import Movie
 
 from apis.users import users_router
 from apis.movies import movies_router
