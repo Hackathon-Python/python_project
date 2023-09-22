@@ -1,12 +1,9 @@
 from flask import Blueprint, request, jsonify, flash, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import login_user, login_required, logout_user, current_user
-from sqlalchemy import and_
+from flask_login import login_user, login_required, logout_user
 
-from utils.adapters import str_to_bool
 from database import db
-from models.movie import Movie
-from models.user import User, user_movie
+from models.user import User
 
 users_router = Blueprint("users", __name__)
 
@@ -99,86 +96,3 @@ def login():
 def logout():
     logout_user()
     return jsonify({"message": "Logged out successfully"}), 201
-
-
-# delete movie from watchlist
-@users_router.route("/watchlist/<int:movie_id>", methods=['DELETE'])
-@login_required
-def delete_from_watchlist(movie_id):
-    try:
-        user = current_user
-
-        if user:
-
-            relationship = db.session.query(user_movie).filter_by(user_id=user.id, movie_id=movie_id).first()
-
-            if relationship:
-                db.session.execute(db.delete(user_movie).filter_by(user_id=user.id, movie_id=movie_id))
-                db.session.commit()
-                return jsonify({"message": "Movie deleted from watchlist"}), 200
-            else:
-                return jsonify({"error": "Movie not found in watchlist"}), 404
-    except Exception as err:
-        return jsonify({"error": f"db error: '{err}'"}), 500
-
-
-# get the list of user's movies
-@users_router.route("/watchlist", methods=['GET'])
-@login_required
-def get_already_watched():
-    try:
-        # accept optional watched query param and parse it into bool
-        is_watched = str_to_bool(request.args.get("watched"))
-
-        user = current_user
-
-        query = db.session.query(Movie).join(user_movie).filter(
-            user_movie.c.user_id == user.id
-        )
-
-        if is_watched is not None:
-            query = query.filter(and_(user_movie.c.watched == is_watched))
-
-        user_watchlist = query.all()
-
-        return jsonify([serialize_movie(movie) for movie in user_watchlist]), 200
-    except Exception as err:
-        return jsonify({"error": f"db error: '{err}'"}), 500
-
-
-# change movie status from 'watch later' to 'already watched'
-@users_router.route("/watchlist/<int:movie_id>", methods=["PUT"])
-@login_required
-def change_movie_status(movie_id):
-    try:
-        movie = Movie.query.get(movie_id)
-        user = current_user
-
-        if not user or not movie:
-            return jsonify({"message": "User or movie not found"}), 404
-
-        relationship = db.session.query(user_movie).filter_by(user_id=user.id, movie_id=movie_id).first()
-
-        if relationship:
-            is_already_watched = db.session.query(user_movie.c.watched).filter(
-                (user_movie.c.user_id == user.id) &
-                (user_movie.c.movie_id == movie_id) &
-                (user_movie.c.watched == True)  # Check if it's already True
-            ).scalar()
-
-            if not is_already_watched:
-                update_statement = user_movie.update().where(
-                    (user_movie.c.user_id == user.id) &
-                    (user_movie.c.movie_id == movie_id)
-                ).values(watched=True)
-
-                db.session.execute(update_statement)
-                db.session.commit()
-            else:
-                return jsonify({"message": "The movie is already marked as watched."}), 400
-
-        return jsonify({"message": "Movie is marked as watched."}), 200
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": str(e)}), 500
