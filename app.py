@@ -11,6 +11,7 @@ from models.movie import Movie
 
 from apis.users import users_router
 from apis.movies import movies_router
+from apis.comments import comments_router
 
 if os.environ.get("FLASK_ENV") == "development":
     load_dotenv()
@@ -43,6 +44,7 @@ def create_app():
     # Register routes
     app.register_blueprint(users_router, url_prefix='/users')
     app.register_blueprint(movies_router, url_prefix='/movies')
+    app.register_blueprint(comments_router, url_prefix='/comments')
 
     # TODO move me to my own router
     @app.route('/', methods=['GET'])
