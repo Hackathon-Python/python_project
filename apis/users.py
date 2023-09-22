@@ -1,12 +1,13 @@
 from flask import Blueprint, request, jsonify, flash, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, login_required, logout_user, current_user
-from utils.adapters import str_to_bool
+from sqlalchemy import and_
 
+from utils.adapters import str_to_bool
 from database import db
 from models.movie import Movie
 from models.user import User, user_movie
-from sqlalchemy import and_
+from models.comment import Comment
 
 users_router = Blueprint("users", __name__)
 
@@ -146,7 +147,7 @@ def get_already_watched():
         return jsonify({"error": f"db error: '{err}'"}), 500
 
 
-# change movie status from not watched to already watched
+# change movie status from 'watch later' to 'already watched'
 @users_router.route("/movies/change_status/<int:movie_id>", methods=["PUT"])
 @login_required
 def change_movie_status(movie_id):
@@ -178,6 +179,39 @@ def change_movie_status(movie_id):
                 return jsonify({"message": "The movie is already marked as watched."}), 400
 
         return jsonify({"message": "Movie is marked as watched."}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
+
+
+# add comment
+@users_router.route("/<int:movie_id>/leave_comment", methods=['POST'])
+@login_required
+def leave_comment(movie_id):
+    try:
+        data = request.get_json()
+
+        if "text" not in data or not data["text"].strip():
+            return jsonify({"error": "Comment text is missing or empty"}), 400
+
+        text = data["text"]
+        movie = Movie.query.get(movie_id)
+        user = current_user
+
+        if not user or not movie:
+            return jsonify({"message": "User or movie not found"}), 404
+
+        new_comment = Comment(
+            text=text
+        )
+
+        db.session.add(new_comment)
+        user.comments.append(new_comment)
+        movie.comments.append(new_comment)
+        db.session.commit()
+
+        return jsonify({"message": "Comment is added."}), 201
 
     except Exception as e:
         db.session.rollback()
