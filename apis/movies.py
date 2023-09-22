@@ -6,8 +6,17 @@ from utils.adapters import remove_special_characters
 from database import db
 from models.movie import Movie
 from models.user import User, user_movie
+from models.comment import Comment
 
 movies_router = Blueprint("movies", __name__)
+
+
+def serialize_comment(comment):
+    return {
+        "id": comment.id,
+        "text": comment.text,
+        "author_id": comment.author_id
+    }
 
 
 # get all movies
@@ -49,7 +58,10 @@ def get_single_movie(movie_id):
                 "img_url": movie.img_url
 
             }
-            return jsonify(movie_data), 200
+            query = db.session.query(Comment).filter(Comment.movie_id == movie.id)
+            movie_comments = query.all()
+
+            return jsonify(movie_data, [serialize_comment(comment) for comment in movie_comments]), 200
         else:
             return jsonify({"error": "Movie not found"}), 404
 
