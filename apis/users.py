@@ -23,6 +23,14 @@ def serialize_movie(movie):
     }
 
 
+def serialize_comment(comment):
+    return {
+        "id": comment.id,
+        "text": comment.text,
+        "movie_id": comment.movie_id
+    }
+
+
 # sign up
 @users_router.route("/signup", methods=['POST'])
 def create_user():
@@ -103,7 +111,7 @@ def logout():
 
 
 # delete movie from watchlist
-@users_router.route("/watchlist/delete/<int:movie_id>", methods=['DELETE'])
+@users_router.route("/watchlist/<int:movie_id>", methods=['DELETE'])
 @login_required
 def delete_from_watchlist(movie_id):
     try:
@@ -124,7 +132,7 @@ def delete_from_watchlist(movie_id):
 
 
 # get the list of user's movies
-@users_router.route("/movies", methods=['GET'])
+@users_router.route("/watchlist", methods=['GET'])
 @login_required
 def get_already_watched():
     try:
@@ -148,7 +156,7 @@ def get_already_watched():
 
 
 # change movie status from 'watch later' to 'already watched'
-@users_router.route("/movies/change_status/<int:movie_id>", methods=["PUT"])
+@users_router.route("/watchlist/<int:movie_id>", methods=["PUT"])
 @login_required
 def change_movie_status(movie_id):
     try:
@@ -186,11 +194,12 @@ def change_movie_status(movie_id):
 
 
 # add comment
-@users_router.route("/<int:movie_id>/leave_comment", methods=['POST'])
+@users_router.route("/comments", methods=['POST'])
 @login_required
-def leave_comment(movie_id):
+def leave_comment():
     try:
         data = request.get_json()
+        movie_id = request.args.get("movie_id")
 
         if "text" not in data or not data["text"].strip():
             return jsonify({"error": "Comment text is missing or empty"}), 400
@@ -213,6 +222,51 @@ def leave_comment(movie_id):
 
         return jsonify({"message": "Comment is added."}), 201
 
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
+
+
+# get all user's comments
+@users_router.route("/comments", methods=["GET"])
+@login_required
+def get_user_comments():
+    try:
+        user = current_user
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        query = db.session.query(Comment).filter(user.id == Comment.author_id)
+        user_comments = query.all()
+        db.session.commit()
+
+        if len(user_comments) > 0:
+            return jsonify([serialize_comment(comment) for comment in user_comments]), 200
+        else:
+            return jsonify({"message": "No comments to display"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
+
+
+# delete comment
+@users_router.route("/comments/<int:comment_id>", methods=['DELETE'])
+@login_required
+def delete_comment(comment_id):
+    try:
+        user = current_user
+        comment = Comment.query.get(comment_id)
+
+        if comment:
+            db.session.execute(db.delete(Comment).filter_by(author_id=user.id, id=comment.id))
+            db.session.commit()
+            return jsonify({"message": "Comment deleted."}), 200
+        else:
+            return jsonify({"error": "Comment not found."}), 404
+
+        pass
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": str(e)}), 500

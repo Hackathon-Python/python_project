@@ -60,8 +60,12 @@ def get_single_movie(movie_id):
             }
             query = db.session.query(Comment).filter(Comment.movie_id == movie.id)
             movie_comments = query.all()
+            db.session.commit()
+            if len(movie_comments) > 0:
+                return jsonify(movie_data, [serialize_comment(comment) for comment in movie_comments]), 200
+            else:
+                return jsonify(movie_data, {"message": "No comments to display"}), 200
 
-            return jsonify(movie_data, [serialize_comment(comment) for comment in movie_comments]), 200
         else:
             return jsonify({"error": "Movie not found"}), 404
 
