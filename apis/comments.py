@@ -22,11 +22,11 @@ def serialize_comment(comment):
 def leave_comment():
     try:
         data = request.get_json()
-        movie_id = request.args.get("movie_id")
 
         if "text" not in data or not data["text"].strip():
             return jsonify({"error": "Comment text is missing or empty"}), 400
 
+        movie_id = data["movie_id"]
         text = data["text"]
         movie = Movie.query.get(movie_id)
         user = current_user

@@ -98,7 +98,7 @@ def find_movie():
 
 
 # rate movie and update local_rating with average rating
-@movies_router.route("/<int:movie_id>", methods=['GET', 'POST'])
+@movies_router.route("/<int:movie_id>", methods=['POST'])
 @login_required
 def rate_movie(movie_id):
     try:
