@@ -105,6 +105,9 @@ def edit_comment(comment_id):
         comment = Comment.query.get(comment_id)
         text = data["text"]
 
+        if "text" not in data or not data["text"].strip():
+            return jsonify({"error": "Comment text is missing or empty"}), 400
+
         if comment:
             db.session.execute(
                 db.update(Comment)
