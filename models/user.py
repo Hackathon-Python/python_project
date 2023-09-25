@@ -6,7 +6,8 @@ user_movie = db.Table(
     "user_movie",
     db.Column("user_id", db.Integer, db.ForeignKey("user.id")),
     db.Column("movie_id", db.Integer, db.ForeignKey("movie.id")),
-    db.Column("watched", db.Boolean, default=False)
+    db.Column("watched", db.Boolean, default=False),
+    db.Column("user_rating", db.Integer, nullable=True)
 )
 
 

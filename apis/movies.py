@@ -1,10 +1,12 @@
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
+from flask_login import login_required, current_user
 from utils.adapters import remove_special_characters
 
 from database import db
 from models.movie import Movie
 from models.comment import Comment
+from models.user import user_movie
 
 movies_router = Blueprint("movies", __name__)
 
@@ -90,6 +92,48 @@ def find_movie():
         else:
             return jsonify({"error": "Movie is not found"}), 404
 
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# rate movie
+@movies_router.route("/<int:movie_id>", methods=['POST'])
+@login_required
+def rate_movie(movie_id):
+    try:
+        data = request.get_json()
+        user = current_user
+        movie = Movie.query.get(movie_id)
+        rating = data["user_rating"]
+
+        if not user or not movie:
+            return jsonify({"message": "User or movie not found"}), 404
+
+        if "user_rating" not in data or not data["user_rating"]:
+            return jsonify({"error": "Rating is missing or empty"}), 400
+
+        if not isinstance(rating, int) or rating < 1 or rating > 10:
+            return jsonify({"error": "Rating must be an integer between 1 and 10"}), 400
+
+        is_already_watched = db.session.query(user_movie.c.watched).filter(
+            (user_movie.c.user_id == user.id) &
+            (user_movie.c.movie_id == movie_id) &
+            (user_movie.c.watched == True)
+        ).scalar()
+
+        if not is_already_watched:
+            return jsonify({"error": "Movie is not watched yet."}), 400
+
+        db.session.execute(
+            user_movie.update().where(
+                (user_movie.c.user_id == user.id) &
+                (user_movie.c.movie_id == movie_id)
+            ).values(user_rating=rating)
+        )
+
+        db.session.commit()
+        return jsonify({"message": "Rating successfully added."}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
