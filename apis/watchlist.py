@@ -17,6 +17,7 @@ def serialize_movie(movie):
         "title": movie.title,
         "description": movie.description,
         "rating": movie.rating,
+        "local_rating": movie.local_rating,
         "img_url": movie.img_url
     }
 
