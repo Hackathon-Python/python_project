@@ -93,3 +93,29 @@ def delete_comment(comment_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": str(e)}), 500
+
+
+# edit comment
+@comments_router.route("/<int:comment_id>", methods=['PUT'])
+@login_required
+def edit_comment(comment_id):
+    try:
+        data = request.get_json()
+        user = current_user
+        comment = Comment.query.get(comment_id)
+        text = data["text"]
+
+        if comment:
+            db.session.execute(
+                db.update(Comment)
+                .where(Comment.id == comment.id)
+                .where(Comment.author_id == user.id)
+                .values(text=text)
+            )
+            db.session.commit()
+            return jsonify({"message": "Comment successfully updated."}), 201
+        else:
+            return jsonify({"error": "Comment not found."}), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": str(e)}), 500
