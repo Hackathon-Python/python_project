@@ -97,8 +97,8 @@ def find_movie():
         return jsonify({"error": str(e)}), 500
 
 
-# rate movie
-@movies_router.route("/<int:movie_id>", methods=['POST'])
+# rate movie and update local_rating with average rating
+@movies_router.route("/<int:movie_id>", methods=['GET', 'POST'])
 @login_required
 def rate_movie(movie_id):
     try:
@@ -108,7 +108,7 @@ def rate_movie(movie_id):
         rating = data["user_rating"]
 
         if not user or not movie:
-            return jsonify({"message": "User or movie not found"}), 404
+            return jsonify({"error": "User or movie not found"}), 404
 
         if "user_rating" not in data or not data["user_rating"]:
             return jsonify({"error": "Rating is missing or empty"}), 400
@@ -116,6 +116,7 @@ def rate_movie(movie_id):
         if not isinstance(rating, int) or rating < 1 or rating > 10:
             return jsonify({"error": "Rating must be an integer between 1 and 10"}), 400
 
+        # user can rate movie only if it is watched
         is_already_watched = db.session.query(user_movie.c.watched).filter(
             (user_movie.c.user_id == user.id) &
             (user_movie.c.movie_id == movie_id) &
@@ -131,9 +132,32 @@ def rate_movie(movie_id):
                 (user_movie.c.movie_id == movie_id)
             ).values(user_rating=rating)
         )
+        db.session.commit()
+
+        # get all ratings for the movie
+        ratings = db.session.query(user_movie.c.user_rating).filter(
+            (user_movie.c.movie_id == movie_id) &
+            (user_movie.c.user_rating.isnot(None))
+        ).all()
+
+        if not ratings:
+            return jsonify({"error": "No ratings found for this movie"}), 404
+
+        # calculate average rating
+        average_rating = db.session.query(func.avg(user_movie.c.user_rating)).filter(
+            (user_movie.c.movie_id == movie_id) &
+            (user_movie.c.user_rating.isnot(None))
+        ).scalar()
+
+        # update Movie table with average rating
+        db.session.execute(
+            db.update(Movie)
+            .where(Movie.id == movie_id)
+            .values(local_rating=average_rating)
+        )
 
         db.session.commit()
-        return jsonify({"message": "Rating successfully added."}), 200
+        return jsonify({"message": "Rating successfully added.", "average rating": average_rating}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
