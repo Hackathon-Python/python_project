@@ -1,12 +1,15 @@
 import os
+from dotenv import load_dotenv
 from flask import jsonify
 import requests
 from database import db
 from models.movie import Movie
 
-MOVIE_DB_API_KEY = "b96158f5d67900bd09aee33cc2703106"
-API_URL = f"https://api.themoviedb.org/3/tv/top_rated?api_key={MOVIE_DB_API_KEY}"
-MOVIE_DB_IMAGE_URL = "https://image.tmdb.org/t/p/w500"
+load_dotenv()
+
+MOVIE_DB_API_KEY = os.environ.get("MOVIE_DB_API_KEY")
+API_URL = os.environ.get("API_URL")
+MOVIE_DB_IMAGE_URL = os.environ.get("MOVIE_DB_IMAGE_URL")
 
 
 def populate_movies_from_api():
