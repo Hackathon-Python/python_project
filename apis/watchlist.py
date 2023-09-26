@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
-from sqlalchemy import and_
+from sqlalchemy import and_, insert
 
 from utils.adapters import str_to_bool
 from database import db
@@ -25,7 +25,7 @@ def serialize_movie(movie):
 # get the list of user's movies
 @watchlist_router.route("/", methods=['GET'])
 @login_required
-def get_already_watched():
+def get_user_watchlist():
     try:
         # accept optional watched query param and parse it into bool
         is_watched = str_to_bool(request.args.get("watched"))
@@ -50,11 +50,15 @@ def get_already_watched():
         return jsonify({"error": f"db error: '{err}'"}), 500
 
 
-# add movie to 'watch later'
-@watchlist_router.route("/watch_later/<int:movie_id>", methods=["POST"])
+# add movie to 'watchlist'
+@watchlist_router.route("/", methods=["POST"])
 @login_required
-def add_to_watch_later(movie_id):
+def add_to_watchlist():
     try:
+        data = request.get_json()
+        movie_id = data['movie_id']
+        watched = data['watched']
+
         user = current_user
         movie = Movie.query.get(movie_id)
 
@@ -63,52 +67,21 @@ def add_to_watch_later(movie_id):
         if movie is None:
             return jsonify({"error": "Movie is not found"}), 404
 
-        if movie in user.watch_later:
-            return jsonify({"message": "Movie is already in watchlist"}), 400
-
-        user.watch_later.append(movie)
-        db.session.commit()
-
-        return jsonify({"message": "Movie added to watchlist"}), 201
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-
-# add movie to 'already watched'
-@watchlist_router.route("/already_watched/<int:movie_id>", methods=["POST"])
-@login_required
-def add_to_already_watched(movie_id):
-    try:
-        user = current_user
-        movie = Movie.query.get(movie_id)
-
-        if user is None:
-            return jsonify({"error": "User is not found"}), 404
-        if movie is None:
-            return jsonify({"error": "Movie is not found"}), 404
-
-        if movie in user.watch_later:
-            watched_movie = db.session.query(user_movie).filter_by(user_id=user.id, movie_id=movie.id,
-                                                                   watched=True).first()
-            if watched_movie:
-                return jsonify({"message": "Movie is already watched."}), 400
-            else:
-                db.session.execute(
-                    user_movie.update()
-                    .where(user_movie.c.user_id == user.id)
-                    .where(user_movie.c.movie_id == movie_id)
-                    .values(watched=True)
-                )
-        elif not movie in user.watch_later:
-            user.watch_later.append(movie)
-            db.session.execute(
-                user_movie.update()
-                .where(user_movie.c.user_id == user.id)
-                .where(user_movie.c.movie_id == movie_id)
-                .values(watched=True)
+        if movie in user.watchlist:
+            query = (user_movie.update().
+            where(user_movie.c.user_id == user.id).
+            where(user_movie.c.movie_id == movie_id).
+            values(
+                watched=watched
+            ))
+        else:
+            query = insert(user_movie).values(
+                user_id=user.id,
+                movie_id=movie_id,
+                watched=watched
             )
+
+        db.session.execute(query)
         db.session.commit()
 
         return jsonify({"message": "Movie added to already watched movies list."}), 201
