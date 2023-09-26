@@ -1,4 +1,4 @@
-# Movies API Python  Project
+# MovieHub API
 
 ## Description:
 
