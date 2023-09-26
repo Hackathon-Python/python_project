@@ -48,10 +48,9 @@ def create_app():
     app.register_blueprint(comments_router, url_prefix='/comments')
     app.register_blueprint(watchlist_router, url_prefix='/watchlist')
 
-    # TODO move me to my own router
     @app.route('/', methods=['GET'])
     def home():
-        return render_template("home.html")
+        return "Home page."
 
     return app
 
