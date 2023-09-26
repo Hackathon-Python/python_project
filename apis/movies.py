@@ -33,6 +33,7 @@ def get_all_movies():
                 "title": movie.title,
                 "description": movie.description,
                 "rating": movie.rating,
+                "local_rating": movie.local_rating,
                 "img_url": movie.img_url
             }
             movies_data.append(movie_data)
@@ -55,6 +56,7 @@ def get_single_movie(movie_id):
                 "title": movie.title,
                 "description": movie.description,
                 "rating": movie.rating,
+                "local_rating": movie.local_rating,
                 "img_url": movie.img_url
 
             }
@@ -87,6 +89,7 @@ def find_movie():
                 "title": movie.title,
                 "description": movie.description,
                 "rating": movie.rating,
+                "local_rating": movie.local_rating,
                 "img_url": movie.img_url} for movie in movies]
             return jsonify(movie_data), 200
         else:

@@ -1,7 +1,7 @@
 /external_libraries/
 /.idea/
 /venv/
-/__pycache__/
+**/__pycache__/
 /scratches/
 /consoles/
 /instance/*
