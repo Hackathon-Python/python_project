@@ -152,6 +152,7 @@ def rate_movie(movie_id):
             (user_movie.c.user_rating.isnot(None))
         ).scalar()
 
+        average_rating = round(average_rating, 1)
         # update Movie table with average rating
         db.session.execute(
             db.update(Movie)
