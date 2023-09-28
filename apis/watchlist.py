@@ -84,7 +84,7 @@ def add_to_watchlist():
         db.session.execute(query)
         db.session.commit()
 
-        return jsonify({"message": "Movie added to already watched movies list."}), 201
+        return jsonify({"message": "Movie added to watchlist."}), 201
 
     except Exception as e:
         db.session.rollback()
